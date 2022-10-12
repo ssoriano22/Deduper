@@ -1,0 +1,8 @@
+----------------------------------
+PSEUDOCODE - Deduper Part 1
+Author: Sophia Soriano
+Date: 12OCT2022
+----------------------------------
+
+Problem: Duplicate sequences are created during the bridge amplification step of PCR. If these duplicates are included in the final sequencing data, bias can be introduced to the dataset favoring the more frequently duplicated sequences. As such, duplicate sequences should be identified after initial alignment by comparing chromosome, position, and strand features of each aligned read in the SAM file. Duplicates will have identical values in these three features, accounting for soft clipping. Once identified, a edited SAM file containing only non-duplicates should be generated as a final output.
+

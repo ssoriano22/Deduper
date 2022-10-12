@@ -1,0 +1,15 @@
+----------------------------------
+LAB NOTEBOOK - Deduper
+Author: Sophia Soriano
+----------------------------------
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+11OCT2022
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Created new github repository from Leslie's template:
+    ** Repo: Deduper-ssoriano22
+* Cloned repository to local Bi624 directory
+    ** /Users/ssoriano/bioinfo/Bi624/Deduper-ssoriano22
+* Created Deduper_Pseudo.txt for pseudocode assignment
+*
