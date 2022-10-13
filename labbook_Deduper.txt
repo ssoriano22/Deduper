@@ -4,7 +4,7 @@ Author: Sophia Soriano
 ----------------------------------
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-11OCT2022
+Part 1: 11OCT2022
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * Created new github repository from Leslie's template:
@@ -12,4 +12,32 @@ Author: Sophia Soriano
 * Cloned repository to local Bi624 directory
     ** /Users/ssoriano/bioinfo/Bi624/Deduper-ssoriano22
 * Created Deduper_Pseudo.txt for pseudocode assignment
-*
+
+12OCT2022
+
+* Started interactive session on Talapas
+    ** srun --account=bgmp --partition=bgmp --nodes=1 --ntasks-per-node=1 --time=8:00:00 --cpus-per-task=1 --pty bash
+* Transferred test file from PS8 to Deduper folder
+    ** Renamed test_PS8.sam
+* Activated conda enviroment from PS8 w/ samtools
+    ** conda activate bgmp_py310
+* Used samtools to sort test_PS8.sam file
+    ** samtools view -h Tests/test_PS8.sam > Tests/test_PS8.bam
+    ** samtools sort Tests/test_PS8.bam > Tests/test_PS8_sorted.bam
+    ** samtools view -h Tests/test_PS8_sorted.bam > Tests/test_PS8_sorted.sam
+    ** @HQ header in new sorted file confirms sort by position column
+    ** This file is going to be too complicated to make output files for...will use Leslie's test.sam file instead
+* Wrote pseudo code - see Deduper_Pseudo.txt. Will submit for Part 1.
+* Created test_short.sam from Leslie's test.sam file included in the github repo
+    * test_short.sam contains tests for:
+        ** Numerical and alphabetical RNAMEs
+        ** 16-bit TRUE/FALSE (rev/for strand)
+        ** Unknown UMI (AGCTACTT)
+        ** Identical UMIs (AACGCCAT)
+        ** Identical but reverse strand (lines 31+32)
+        ** Duplicates (lines 33+34)
+        ** Single-end soft-clipping and double-end soft-clipping (lines 28+29)
+* Keep getting header errors when using samtools to try and sort test_short.sam or test.sam
+    ** [E::sam_parse1] missing SAM header
+        [W::sam_read1] Parse error at line 1
+        samtools sort: truncated file. Aborting
