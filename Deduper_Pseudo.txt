@@ -27,7 +27,7 @@ Functions:
     * Evaluates bit 16 -> (flag & 16) == 16. TRUE = "reverse", FALSE = "forward"
     * Returns "forward" or "reverse"
     * i.e. Input = 16, Output = "reverse"
-* processCIGAR(pos,cigar): takes input CIGAR string and returns corrected position (adjusted for soft-clipping).
+* processCIGAR(pos,cigar): takes input CIGAR string and original pos and returns corrected position (adjusted for soft-clipping).
     * Parses cigar string to identify location (beginning or end of read) and amount (#bases) of soft-clipping
     * Adjusts pos based on cigar info
     * Returns adj_pos
