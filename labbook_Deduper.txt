@@ -41,3 +41,38 @@ Part 1: 11OCT2022
     ** [E::sam_parse1] missing SAM header
         [W::sam_read1] Parse error at line 1
         samtools sort: truncated file. Aborting
+    ** I wasn't using the -h option on the first samtools view command to transform sam -> bam
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Part 2: 16OCT2022
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Completed peer review through canvas
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Part 3: 25OCT2022
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Started soriano_deduper.py for real code
+* Used git repo to transfer files created above to Talapas to work there
+* Transferred get_args() from demux assignment (Demux.py)
+    ** Adopted arguments for those defined in deduper assignment
+
+26OCT2022
+
+* Created soriano_Deduper.srun slurm script to test soriano_deduper.py w/ argparse options
+* Wrote getRecord() and writeRecord() functions - see soriano_deduper.py
+* Created known umi set from input file of known umis (STL96.txt)
+* Reorganized main code and getRecord to identify and treat header lines differently from record lines
+    ** Header lines need to always be printed to output file, record lines have to be assessed for duplicate characteristics
+* Wrote getStrand() function to evaluate bitwise flag of current read for strandedness (forward or reverse)
+* Need to reconsider what structure to use for tracking written reads...set? dict?
+* Started coding processCIGAR() function.
+    ** Used regex split w/ "\d+" to get list of letters in cigar and "[A-Z]+" to get list of numbers in cigar
+    ** Needed to index-splice both lists to remove blanks (at beginning of letters list and end of number list)
+    ** Coding scenarios for Ds, Ns, Ss in cigar...need to figure out how to find index of only last S in list
+
+27OCT2022
+
+* Completed processCIGAR() function - parses string differently pased on strandedness
+* 
