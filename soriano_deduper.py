@@ -8,19 +8,23 @@ import re
 
 #Accept command line input for fields mentioned in assignment README.md - *ADD HELP LINE*
 def get_args():
-    parser = argparse.ArgumentParser(description="A program to remove duplicate reads from a given SAM file.")
+    '''Argparse Function: Retrieves user-input arguments from command line.'''
+    parser = argparse.ArgumentParser(description="A program to remove duplicate reads from a given SAM file. Please use the following format to use this program to deduplicate SAM files: ./soriano_deduper.py -f INPUT_FILENAME.sam -o OUTPUT_FILENAME.sam -u KNOWN_UMI_FILE.txt")
+
     parser.add_argument("-f","--file",help="Input sorted SAM file (absolute path)",type=str)
     parser.add_argument("-o","--outfile",help="Output file name (outfile.sam)",type=str)
     parser.add_argument("-u","--umi",help="Input file with known UMIs (absolute path)",type=str)
-    #parser.add_argument("-h","--help",help="HELP",type=str)
     return parser.parse_args()
 
 #Get current record and return necessary variables using file handle input (input_fh)
 def getRecord(input_fh):
+    '''Function that takes the file handle of the SAM input file and returns a list of the relevant sections of the current record/line in SAM file. Line sections returned as record_list = [UMI,BITFLAG,RNAME,POS,CIGAR,complete_record(w/o newline)].'''
     record_stripped: str = input_fh.readline().strip()
     # Split record for each required variable. Index positions per variable after split: QNAME = 0, POS = 3, RNAME = 2, FLAG = 1, CIGAR = 5.
     record_split: list = record_stripped.split("\t")
-    if record_split[0].startswith("@") == True:
+    if record_split[0] == "":
+        record_list: list = ["EOF"]
+    elif record_split[0].startswith("@") == True:
         #Header case
         record_list: list = ["HEADER",record_stripped]
     else:
@@ -36,11 +40,13 @@ def getRecord(input_fh):
 
 #Open and write current record to output SAM file specified by argparse -o (output_fh)
 def writeRecord(output_fh,current_line):
+    '''Takes output file handle and current, complete record line and writes current record to output file.'''
     output_fh.write(current_line +"\n")
     return None
 
 #Takes input bitwise flag of current record and returns strandedness (forward or reverse).
 def getStrand(flag):
+    '''Takes bitwise flag (from current record) and returns read strandedness ("reverse" or "forward") by evaluating bit 16.'''
     int_flag: int = int(flag)
     strandedness: str = ""
     if((int_flag & 16) == 16):
@@ -51,6 +57,7 @@ def getStrand(flag):
 
 #Takes input CIGAR string and original pos and returns corrected position (adjusted for soft-clipping).
 def processCIGAR(pos,cigar,strand):
+    '''Takes read start position (POS), cigar string (CIGAR), and strandedness (from getStrand(bitflag)) of current record and returns adjusted read start position. Accounts for how cigar and strandeness affect actual read start position when checking for duplicate reads.'''
     adj_pos: int = pos #Initialize adj_pos to initial position from current record
     #Initialize relevant cigar options to 0
     dels: int = 0
@@ -80,7 +87,7 @@ def processCIGAR(pos,cigar,strand):
         #For strand reads: (beg ss + stpos)
         if cigar_letters[0] == "S":
             beg_s = int(cigar_numbers[0])
-        adj_pos = beg_s + pos
+        adj_pos = pos - beg_s
     return adj_pos
 #print(processCIGAR(5,"3S2I3D71M3S","reverse")) #FOR TESTING CIGAR FUNCTION
 
@@ -100,9 +107,9 @@ with open(umi_file,"r") as fh_umi:
         known_umis.add(k_umi)
 
 #Initialize list to track written records. Format = (UMI,RNAME,strand,adj POS). *WHAT STRUCTURE SHOULD THIS BE*
-written_reads = []
-writ_umis = set()
-writ_rns = set()
+written_reads = set()
+# writ_umis = set()
+# writ_rns = set()
 
 #Open output file for writing
 fh_out = open(out_file,"w")
@@ -115,7 +122,7 @@ with open(in_file,"r") as fh_input:
         if sam_rec_list[0] == "HEADER":
             #Header line cases - print all headers to output file
             writeRecord(fh_out,sam_rec_list[1])
-        elif sam_rec_list[0] == "":
+        elif sam_rec_list[0] == "EOF":
             #EOF case - break while True loop for reading input file
             break 
         else:
@@ -127,63 +134,16 @@ with open(in_file,"r") as fh_input:
                 #Determine adjusted position based on cigar - needed to add written_reads to list going forward
                 pos_adj: int = processCIGAR(int(sam_rec_list[3]),sam_rec_list[4],current_strand)
                 #Format current read to a list w/ same parameters as the lists in written_reads list
-                rec_list: list = [sam_rec_list[0],sam_rec_list[2],current_strand,pos_adj] 
+                rec_list = (sam_rec_list[0],sam_rec_list[2],current_strand,pos_adj)
                 #print(rec_list)
-                if rec_list[0] not in writ_umis:
-                    #Yes - current UMI is NOT in written_reads list
+                if rec_list not in written_reads:
+                    #Yes - current record is NOT in written_reads set
                     writeRecord(fh_out,sam_rec_list[5])
-                    #Add current read (rec_list) to written_reads list
-                    written_reads.append(rec_list)
-                    #Add current umi/rname to the written sets for each
-                    writ_umis.add(rec_list[0])
-                    writ_rns.add(rec_list[1])
-                else:
-                    #No - current UMI has been written before
-                    writ_rns = set() #Create set containing currently written rnames
-                    for written_rec in written_reads:
-                        writ_rns.add(written_rec[1])
-                    if rec_list[1] not in writ_rns:
-                        #Yes - current UMI is NOT in written_reads list
-                        writeRecord(fh_out,sam_rec_list[5])
-                        #Add current read (rec_list) to written_reads list
-                        written_reads.append(rec_list)
-                    else:
-                        pass
-            else:
-                #No - current UMI is unknown/error
-                pass #DO NOT PRINT RECORD
-        if i>27: #FOR TESTING
-            break #FOR TESTING
-#print(written_reads)
-#         * Check if UMI (recordList[1]) is in "written" dict as key[0]. If yes:
-#             * Check if RNAME (recordList[3]) is in "written" dict as key[1]. If yes:
-#                 * Check if getStrand(recordList[4]) equals strandeness value in "written" dict as key[2]. If yes:
-#                     * Check if CIGAR (recordList[5]) contains "S" (for soft-clipping). If yes:
-#                         * Get adjusted position from processCIGAR(recordList[2],recordList[5])
-#                         * Check if adj_POS equals "written" dict value[0] for current (UMI,RNAME,strand) key. If yes:
-#                             * THIS IS A DUPLICATE - DO NOT WRITE TO FILE
-#                         * If no (POS is different):
-#                             * Open output file (-o argparse)
-#                             * writeRecord(output_fh,recordList[0])
-#                             * Add necessary variables of current record to "written" dict (key=(UMI,RNAME,getStrand(recordList[4])), value=(adj_POS,recordList[5]))
-#                     * If no (no soft-clipping was applied for this record):
-#                         * Check if POS (recordList[2]) equals "written" dict value[0] for current (UMI,RNAME,strand) key. If yes:
-#                             * THIS IS A DUPLICATE - DO NOT WRITE TO FILE
-#                         * If no (POS is different):
-#                             * Open output file (-o argparse)
-#                             * writeRecord(output_fh,recordList[0])
-#                             * Add necessary variables of current record to "written" dict (key=(UMI,RNAME,getStrand(recordList[4])), value=(recordList[2],recordList[5])) 
-#                 * If no (strandedness is different):
-#                     * Open output file (-o argparse)
-#                     * writeRecord(output_fh,recordList[0])
-#                     * Add necessary variables of current record to "written" dict (key=(UMI,RNAME,getStrand(recordList[4])), value=(recordList[2],recordList[5])) 
-#             * If no (current record has new RNAME):
-#                 * Open output file (-o argparse)
-#                 * writeRecord(output_fh,recordList[0])
-#                 * Add necessary variables of current record to "written" dict (key=(UMI,RNAME,getStrand(recordList[4])), value=(recordList[2],recordList[5])) 
-#         * If no (current record has new, known UMI):
-#             * Open output file (-o argparse)
-#             * writeRecord(output_fh,recordList[0])
-#             * Add necessary variables of current record to "written" dict (key=(UMI,RNAME,getStrand(recordList[4])), value=(recordList[2],recordList[5]))
+                    #Add current read (rec_list) to written_reads set
+                    written_reads.add(rec_list)
+
+        # if i>99: #FOR TESTING
+        #     break #FOR TESTING
+#print(written_reads) #FOR TESTING
 
 fh_out.close()
