@@ -75,4 +75,160 @@ Part 3: 25OCT2022
 27OCT2022
 
 * Completed processCIGAR() function - parses string differently pased on strandedness
-* 
+* Had to adjust conditional statments to include EOF case in getRecord() function - fixed indexing error at end of file
+
+01NOV2022
+
+* Created soriano_Deduper_2.srun to run soriano_deduper.py on larger sam file suggested by Leslie in Google docs in canvas assignment:
+    ** /projects/bgmp/shared/deduper/C1_SE_uniqAlign.sam - 18186474 lines in file (wc -l)
+* Ran soriano_Deduper_2.srun: job ID 22699526
+    ** Forgot to add /usr/bin/time...will add for next time
+    ** Realized (on advice from Leslie) that list of lists to track written reads will take A REALLY LONG time
+* Ran diff command (-y option) to view differences between test.sorted.sam (short input file) and output_test.sorted.sam (output of short file)
+    ** soriano_deduper.py removed 22 lines from test.sorted.sam
+* After realization noted above, created soriano_deduper_v2.py and soriano_Deduper_3.srun as copies of previous versions
+    ** Changed soriano_deduper_v2.py to create a written_reads SET (not list) of TUPLES (not lists) for each record saved
+    ** Re-ran on small test file (test.sorted.sam) and used diff command to check results - no difference seen between v1 and v2 python scripts!
+    ** Submitted soriano_Deduper_3.srun in sbatch: job ID 22699653
+        *** Finished in 1:36 (m:s), exit code: 0 - much faster than v1 code (cancelled at 1 hr)
+* Evaluated resulting output_C1_SE_uniqAlign_v2.sam filebased on google doc (canvas) criteria:
+    ** Header lines: $ cat output_C1_SE_uniqAlign_v2.sam | grep "^@" | wc -l => 64
+    ** Record lines: $ cat output_C1_SE_uniqAlign_v2.sam | grep -v "^@" | wc -l => 14048159
+    ** Removed lines: ((18186474-64)-14048159) = 4138251
+* Jason pointed out error in processCIGAR() code: was adding beg_s instead of subtracting from original start position
+* Re-ran soriano_Deduper_3.srun: job ID 22704038
+    ** Finished in 1:40, exit code: 0
+* Evaluated resulting output again:
+    ** Header lines: see command above => 64
+    ** Record lines: see command above => 13842643
+    ** Removed lines: ((18186474-64)-13842643) = 4343767
+* Started writing additional test sam files based on Jason's example (test_short.sam, test_short_expout.sam)
+    ** So far test cases evaluate as expected (read sequence replaced by reasoning/target description in each test record)
+    ** Comparing test_short_expout.sam w/ output_test_short.sam using diff command shows no significant differences
+* Used bash commands to find number of records per chromosome/scaffold/patch:
+    ** Chr 1: $ cat output_C1_SE_uniqAlign_v2.sam | awk '$3=="1"' | wc -l => 701273
+    ** Chr 1 method command above repeated for all other chr below, replacing the "1" in the awk command w/ target rname
+    ** Chr 2: 2794697
+    ** Chr 3: 551591
+    ** Chr 4: 592986
+    ** Chr 5: 565044
+    ** Chr 6: 513546
+    ** Chr 7: 1128963
+    ** Chr 8: 580004
+    ** Chr 9: 631815
+    ** Chr 10: 569466
+    ** Chr 11: 1250161
+    ** Chr 12: 361776
+    ** Chr 13: 469349
+    ** Chr 14: 388949
+    ** Chr 15: 440084
+    ** Chr 16: 363189
+    ** Chr 17: 523270
+    ** Chr 18: 292856
+    ** Chr 19: 575409
+    ** Chr X: 320214
+    ** Chr Y: 2259
+    ** Chr MT: 219078
+    ** Chr GL456210.1: 5
+    ** Chr GL456211.1: 6
+    ** Chr GL456212.1: 4
+    ** Chr GL456221.1: 4
+    ** Chr GL456233.2: 658
+    ** Chr GL456239.1: 1
+    ** Chr GL456354.1: 1
+    ** Chr GL456367.1: 3
+    ** Chr GL456368.1: 3
+    ** Chr GL456370.1: 21
+    ** Chr GL456379.1: 2
+    ** Chr GL456382.1: 1
+    ** Chr GL456383.1: 1
+    ** Chr GL456389.1: 1
+    ** Chr GL456390.1: 1
+    ** Chr GL456396.1: 17
+    ** Chr JH584295.1: 111
+    ** Chr JH584299.1: 3
+    ** Chr JH584304.1: 294
+    ** Chr MU069434.1: 3
+    ** Chr MU069435.1: 5524
+
+03NOV2022
+
+* Fixed help description in argparse
+* Added doc strings to each separate function defined in code
+* My counts are slightly off from the consensus number many other classmates have gotten. Chose one chr (GL456233.2) with different numbers (658 vs. 656) and made test sam files.
+    ** $ cat /projects/bgmp/shared/deduper/C1_SE_uniqAlign.sam | awk '$3=="GL456233.2"' > Tests/C1_SE_uniqAlign_GL456233.2.sam
+    ** $ cat output_C1_SE_uniqAlign_v2.sam | awk '$3=="GL456233.2"' > Tests/C1_SE_uniqAlign_GL456233.2_current_out.sam
+    ** Don't see any obvious duplicates, but scanning manually will take a long time...
+
+04NOV2022
+
+* Realized cigar case of more than one "D" or "N" in a single string was not being accounted for - adjusted code in soriano_deduper_v2.py
+    ** Separated current D and N identifying code into if/else statments to check if there is >1 of that letter in the list of cigar letters.
+    ** Else case (only 1 D/N) remains the same
+    ** If >1 D/Ns in current cigar, .index() doesn't work, so a for loop is required to step through list and check each letter for D/N.
+    ** Confirmed functional in test cases taken from C1_SE_uniqAlign.sam file (commented out in soriano_deduper_v2.py code)
+* Also added else conditional to count number of reads w/ unknown UMIs encountered to v2 python script above.
+* Ran soriano_Deduper_3.srun w/ sbatch (running soriano_deduper_v2.py on large test file C1_SE_uniqAlign.sam):
+    ** Job ID: 22782900
+    ** Time Elapsed: 1:45 (m:s), Exit Code: 0
+    ** Headers: $ cat output_C1_SE_uniqAlign_v2.sam | grep "^@" | wc -l => 64
+    ** Record lines: $ cat output_C1_SE_uniqAlign_v2.sam | grep -v "^@" | wc -l => 13842617
+    ** Removed lines: ((18186474-64)-13842617) = 4343793
+    ** Slightly closer to values from classmates, but not by much.
+* Asked Lisa and Peter for advice on what code areas to check - both recommended looking at how I'm parsing the cigar string for reverse reads.
+    ** I wasn't counting Ms in the reverse strand cigar, but since you have to get to the other end of the read it totally makes sense
+    ** Added conditionals to check for Ms in the reverse strand, same as D/N conditionals described above
+* Ran soriano_Deduper_3.srun w/ sbatch (running soriano_deduper_v2.py on large test file C1_SE_uniqAlign.sam):
+    ** Job ID: 22783281
+    ** Time Elapsed: 1:44 (m:s), Exit Code: 0
+    ** Headers: $ cat output_C1_SE_uniqAlign_v2.sam | grep "^@" | wc -l => 64
+    ** Record lines: $ cat output_C1_SE_uniqAlign_v2.sam | grep -v "^@" | wc -l => 13719048
+    ** Removed lines: ((18186474-64)-13719048) = 4467362
+    ** Chr 1: $ cat output_C1_SE_uniqAlign_v2.sam | awk '$3=="1"' | wc -l => 697508
+    ** Chr 1 method command above repeated for all other chr below, replacing the "1" in the awk command w/ target rname
+    ** Chr 2: 2787018
+    ** Chr 3: 547615
+    ** Chr 4: 589839
+    ** Chr 5: 562160
+    ** Chr 6: 510818
+    ** Chr 7: 1113183
+    ** Chr 8: 576463
+    ** Chr 9: 627488
+    ** Chr 10: 564903
+    ** Chr 11: 1220389
+    ** Chr 12: 359951
+    ** Chr 13: 467659
+    ** Chr 14: 387239
+    ** Chr 15: 437465
+    ** Chr 16: 360923
+    ** Chr 17: 517566
+    ** Chr 18: 290506
+    ** Chr 19: 571665
+    ** Chr X: 317853
+    ** Chr Y: 2247
+    ** Chr MT: 202002
+    ** Chr GL456210.1: 5
+    ** Chr GL456211.1: 6
+    ** Chr GL456212.1: 4
+    ** Chr GL456221.1: 4
+    ** Chr GL456233.2: 656
+    ** Chr GL456239.1: 1
+    ** Chr GL456354.1: 1
+    ** Chr GL456367.1: 3
+    ** Chr GL456368.1: 3
+    ** Chr GL456370.1: 21
+    ** Chr GL456379.1: 2
+    ** Chr GL456382.1: 1
+    ** Chr GL456383.1: 1
+    ** Chr GL456389.1: 1
+    ** Chr GL456390.1: 1
+    ** Chr GL456396.1: 17
+    ** Chr JH584295.1: 111
+    ** Chr JH584299.1: 3
+    ** Chr JH584304.1: 294
+    ** Chr MU069434.1: 3
+    ** Chr MU069435.1: 5450
+
+* Numbers match class consensus numbers for duplicates.
+* Renamed final python script according to assignment requirements (soriano_deduper.py) - renames previous files old and old2
+* Will upload final verisons of scripts and labbook to github

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+#SBATCH --account=bgmp          ### SLURM account which will be charged for the job
+#SBATCH --partition=bgmp          ### partition to run things
+#SBATCH --job-name=Deduper2      ### Job Name
+#SBATCH --nodes=1              ### Node count required for the job
+#SBATCH --cpus-per-task=5       ### Number of cpus (cores) per task
+#SBATCH --mail-user=ssoriano@uoregon.edu ### Send email when done
+#SBATCH --mail-type=END
+
+#Slurm script -^
+
+#/usr/bin/time -v
+
+./soriano_deduper.py -f /projects/bgmp/shared/deduper/C1_SE_uniqAlign.sam -o output_C1_SE_uniqAlign.sam -u STL96.txt
